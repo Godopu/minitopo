@@ -8,6 +8,7 @@ class NetemAt(object):
     """
     Class representing a netem command to be run after some time
     """
+
     def __init__(self, at, cmd):
         self.at = at
         self.cmd = cmd
@@ -41,6 +42,7 @@ class LinkCharacteristics(object):
         netem_at        list of NetemAt instances applicable to the link
         backup          integer indicating if this link is a backup one or not (useful for MPTCP)
     """
+
     def __init__(self, id, link_type, delay, queue_size, bandwidth, loss, backup=0):
         self.id = id
         self.link_type = link_type
@@ -48,7 +50,8 @@ class LinkCharacteristics(object):
         self.queue_size = queue_size
         self.bandwidth = bandwidth
         self.loss = loss
-        self.queuing_delay = str(self.extract_queuing_delay(queue_size, bandwidth, delay))
+        self.queuing_delay = str(
+            self.extract_queuing_delay(queue_size, bandwidth, delay))
         self.netem_at = []
         self.backup = backup
 
@@ -63,11 +66,11 @@ class LinkCharacteristics(object):
         Return the buffer size in bytes
         """
         return (1500.0 * self.bandwidth_delay_product_divided_by_mtu()) + \
-             (float(self.bandwidth) * 1000.0 * float(self.queuing_delay) / 8)
+            (float(self.bandwidth) * 1000.0 * float(self.queuing_delay) / 8)
 
     def extract_queuing_delay(self, queue_size, bandwidth, delay, mtu=1500):
         queuing_delay = (int(queue_size) * int(mtu) * 8.0 * 1000.0) / \
-             (float(bandwidth) * 1024 * 1024)
+            (float(bandwidth) * 1024 * 1024)
         return max(int(queuing_delay), 1)
 
     def add_netem_at(self, n):
@@ -79,7 +82,8 @@ class LinkCharacteristics(object):
                 n.delta = n.at - self.netem_at[-1].at
                 self.netem_at.append(n)
             else:
-                logging.error("{}: not taken into account because not specified in order in the topo param file".format(n))
+                logging.error(
+                    "{}: not taken into account because not specified in order in the topo param file".format(n))
 
     def build_delete_tc_cmd(self, ifname):
         return "tc qdisc del dev {} root; tc qdisc del dev {} ingress ".format(ifname, ifname)
@@ -137,11 +141,13 @@ class TopoParameter(Parameter):
     RIGHT_SUBNET = "rightSubnet"
     NETEM_AT = "netemAt_"
     CHANGE_NETEM = "changeNetem"
+    CLIENTS = "clients"
 
     DEFAULT_PARAMETERS = {
         LEFT_SUBNET: "10.1.",
         RIGHT_SUBNET: "10.2.",
         CHANGE_NETEM: "false",
+        CLIENTS: "1",
     }
 
     def __init__(self, parameter_filename):
@@ -150,6 +156,7 @@ class TopoParameter(Parameter):
         self.link_characteristics = []
         self.load_link_characteristics()
         self.load_netem_at()
+        self.load_clients()
         logging.info(self)
 
     def parse_netem_at(self, key):
@@ -161,13 +168,23 @@ class TopoParameter(Parameter):
         _, link_type, link_id = key.split("_")
         return link_type, int(link_id)
 
+    def load_clients(self):
+        for k in sorted(self.parameters):
+            if k == 'clients':
+                self._clients = int(self.parameters[k])
+
+    @property
+    def clients(self):
+        return self._clients
+
     def load_netem_at(self):
         if not self.get(TopoParameter.CHANGE_NETEM) == "yes":
             return
         for k in sorted(self.parameters):
             if k.startswith(TopoParameter.NETEM_AT):
                 link_type, link_id = self.parse_netem_at(k)
-                self.load_netem_at_value(link_type, link_id, self.parameters[k])
+                self.load_netem_at_value(
+                    link_type, link_id, self.parameters[k])
 
     def find_link_characteristic(self, link_type, link_id):
         for l in self.link_characteristics:
@@ -184,7 +201,8 @@ class TopoParameter(Parameter):
             l.add_netem_at(na)
 
         except ValueError as e:
-            logging.error("Unable to set netem for link {} with command {}: {}".format(link_id, n, e))
+            logging.error(
+                "Unable to set netem for link {} with command {}: {}".format(link_id, n, e))
 
         logging.info(self.link_characteristics[link_id].netem_at)
 
@@ -243,7 +261,7 @@ class TopoParameter(Parameter):
                     logging.error("Ignored path {}: {}".format(k, e))
                 else:
                     path = LinkCharacteristics(link_id, link_type, delay, queue_size,
-                            bw, loss_perc, backup=is_backup)
+                                               bw, loss_perc, backup=is_backup)
                     self.link_characteristics.append(path)
 
     def __str__(self):
@@ -281,8 +299,8 @@ class BottleneckLink(object):
         topo_builder.add_link(self.bs2, self.bs3)
 
     def get_bs_name(self, index):
-        return "{}_{}_{}_{}".format(BottleneckLink.BOTTLENECK_SWITCH_NAME_PREFIX, 
-            self.link_characteristics.link_type, self.link_characteristics.id, index)
+        return "{}_{}_{}_{}".format(BottleneckLink.BOTTLENECK_SWITCH_NAME_PREFIX,
+                                    self.link_characteristics.link_type, self.link_characteristics.id, index)
 
     def reinit_variables(self):
         # Required to retrieve actual nodes
@@ -297,30 +315,34 @@ class BottleneckLink(object):
 
         # Cleanup tc commands
         for bs1_ifname in bs1_interface_names:
-            clean_cmd = self.link_characteristics.build_delete_tc_cmd(bs1_ifname)
+            clean_cmd = self.link_characteristics.build_delete_tc_cmd(
+                bs1_ifname)
             logging.info(clean_cmd)
             self.topo.command_to(self.bs1, clean_cmd)
 
         for bs2_ifname in bs2_interface_names:
-            clean_cmd = self.link_characteristics.build_delete_tc_cmd(bs2_ifname)
+            clean_cmd = self.link_characteristics.build_delete_tc_cmd(
+                bs2_ifname)
             logging.info(clean_cmd)
             self.topo.command_to(self.bs2, clean_cmd)
 
         # Flow bs0 -> bs3
         netem_cmd = self.link_characteristics.build_netem_cmd(bs1_interface_names[-1],
-            "loss {}".format(self.link_characteristics.loss) if float(self.link_characteristics.loss) > 0 else "")
+                                                              "loss {}".format(self.link_characteristics.loss) if float(self.link_characteristics.loss) > 0 else "")
         logging.info(netem_cmd)
         self.topo.command_to(self.bs1, netem_cmd)
-        shaping_cmd = self.link_characteristics.build_bandwidth_cmd(bs2_interface_names[-1])
+        shaping_cmd = self.link_characteristics.build_bandwidth_cmd(
+            bs2_interface_names[-1])
         logging.info(shaping_cmd)
         self.topo.command_to(self.bs2, shaping_cmd)
 
         # Flow bs3 -> bs0
         netem_cmd = self.link_characteristics.build_netem_cmd(bs2_interface_names[0],
-            "loss {}".format(self.link_characteristics.loss) if float(self.link_characteristics.loss) > 0 else "")
+                                                              "loss {}".format(self.link_characteristics.loss) if float(self.link_characteristics.loss) > 0 else "")
         logging.info(netem_cmd)
         self.topo.command_to(self.bs2, netem_cmd)
-        shaping_cmd = self.link_characteristics.build_bandwidth_cmd(bs1_interface_names[0])
+        shaping_cmd = self.link_characteristics.build_bandwidth_cmd(
+            bs1_interface_names[0])
         logging.info(shaping_cmd)
         self.topo.command_to(self.bs1, shaping_cmd)
 
@@ -328,18 +350,22 @@ class BottleneckLink(object):
         bs1_interface_names = self.topo.get_interface_names(self.bs1)
         bs2_interface_names = self.topo.get_interface_names(self.bs2)
         # Flow bs0 -> bs3
-        shaping_cmd = self.link_characteristics.build_changing_bandwidth_cmd(bs1_interface_names[-1])
+        shaping_cmd = self.link_characteristics.build_changing_bandwidth_cmd(
+            bs1_interface_names[-1])
         logging.info(shaping_cmd)
         self.topo.command_to(self.bs1, shaping_cmd)
-        netem_cmd = self.link_characteristics.build_changing_netem_cmd(bs2_interface_names[-1])
+        netem_cmd = self.link_characteristics.build_changing_netem_cmd(
+            bs2_interface_names[-1])
         logging.info(netem_cmd)
         self.topo.command_to(self.bs2, netem_cmd)
 
         # Flow bs3 -> bs0
-        shaping_cmd = self.link_characteristics.build_changing_bandwidth_cmd(bs2_interface_names[0])
+        shaping_cmd = self.link_characteristics.build_changing_bandwidth_cmd(
+            bs2_interface_names[0])
         logging.info(shaping_cmd)
         self.topo.command_to(self.bs2, shaping_cmd)
-        netem_cmd = self.link_characteristics.build_changing_netem_cmd(bs1_interface_names[0])
+        netem_cmd = self.link_characteristics.build_changing_netem_cmd(
+            bs1_interface_names[0])
         logging.info(netem_cmd)
         self.topo.command_to(self.bs1, netem_cmd)
 
@@ -380,7 +406,8 @@ class Topo(object):
     def __init__(self, topo_builder, topo_parameter):
         self.topo_builder = topo_builder
         self.topo_parameter = topo_parameter
-        self.change_netem = topo_parameter.get(TopoParameter.CHANGE_NETEM).lower() == "yes"
+        self.change_netem = topo_parameter.get(
+            TopoParameter.CHANGE_NETEM).lower() == "yes"
         self.log_file = open(Topo.CMD_LOG_FILENAME, 'w')
         self.clients = []
         self.routers = []
@@ -467,7 +494,8 @@ class Topo(object):
         otherwise just connect it to from_a and to_b and returns the bottleneck_link
         """
         if bottleneck_link is None:
-            bottleneck_link = BottleneckLink(self.topo_builder, self, link_characteristics)
+            bottleneck_link = BottleneckLink(
+                self.topo_builder, self, link_characteristics)
             self.bottleneck_links.append(bottleneck_link)
 
         self.topo_builder.add_link(from_a, bottleneck_link.get_left())
@@ -476,9 +504,12 @@ class Topo(object):
 
     def reinit_variables(self):
         # Because we create nodes before starting mininet
-        self.clients = [self.get_host(self.get_client_name(i)) for i in range(len(self.clients))]
-        self.routers = [self.get_host(self.get_router_name(i)) for i in range(len(self.routers))]
-        self.servers = [self.get_host(self.get_server_name(i)) for i in range(len(self.servers))]
+        self.clients = [self.get_host(self.get_client_name(i))
+                        for i in range(len(self.clients))]
+        self.routers = [self.get_host(self.get_router_name(i))
+                        for i in range(len(self.routers))]
+        self.servers = [self.get_host(self.get_server_name(i))
+                        for i in range(len(self.servers))]
         for b in self.bottleneck_links:
             b.reinit_variables()
 
@@ -502,6 +533,7 @@ class TopoConfig(object):
     This class is not instantiable as it. You must define a child class with the
     `NAME` attribute.
     """
+
     def __init__(self, topo, param):
         self.topo = topo
         self.param = param
@@ -520,8 +552,10 @@ class TopoConfig(object):
         logging.info("Disable TSO, GSO and GRO on all interfaces of all nodes")
         for node in [self.topo.get_host(n) for n in self.topo.topo_builder.net]:
             for intf in self.topo.get_interface_names(node):
-                logging.debug("Disable TSO, GSO and GRO on interface {}".format(intf))
-                cmd = "ethtool -K {} tso off; ethtool -K {} gso off; ethtool -K {} gro off".format(intf, intf, intf)
+                logging.debug(
+                    "Disable TSO, GSO and GRO on interface {}".format(intf))
+                cmd = "ethtool -K {} tso off; ethtool -K {} gso off; ethtool -K {} gro off".format(
+                    intf, intf, intf)
                 logging.debug(cmd)
                 self.topo.command_to(node, cmd)
 

@@ -2,6 +2,7 @@ from .parameter import Parameter
 
 import logging
 
+
 class ExperimentParameter(Parameter):
     """
     Handler for experiment parameters stored in configuration files.
@@ -12,25 +13,25 @@ class ExperimentParameter(Parameter):
     Attribute:
         default_parameters  Default values for the parameters
     """
-    RMEM       = "rmem"
-    WMEM       = "wmem"
+    RMEM = "rmem"
+    WMEM = "wmem"
     MPTCP_ENABLED = "mptcpEnabled"
-    SCHED      = "sched"
-    CC		   = "congctrl"
-    AUTOCORK   = "autocork"
+    SCHED = "sched"
+    CC = "congctrl"
+    AUTOCORK = "autocork"
     EARLY_RETRANS = "earlyRetrans"
-    KERNELPM   = "kpm"
-    KERNELPMC  = "kpmc" #kernel path manager client / server
-    KERNELPMS  = "kpms"
-    USERPMC	   = "upmc"
-    USERPMS	   = "upms" #userspace path manager client / server
-    USERPMC_ARGS   = "upmc_args"
-    USERPMS_ARGS   = "upms_args"
+    KERNELPM = "kpm"
+    KERNELPMC = "kpmc"  # kernel path manager client / server
+    KERNELPMS = "kpms"
+    USERPMC = "upmc"
+    USERPMS = "upms"  # userspace path manager client / server
+    USERPMC_ARGS = "upmc_args"
+    USERPMS_ARGS = "upms_args"
     CLIENT_PCAP = "clientPcap"
     SERVER_PCAP = "serverPcap"
     SNAPLEN_PCAP = "snaplen_pcap"
-    XP_TYPE     = "xpType"
-    PING_COUNT  = "pingCount"
+    XP_TYPE = "xpType"
+    PING_COUNT = "pingCount"
     PRIO_PATH_0 = "priority_path_0"
     PRIO_PATH_1 = "priority_path_1"
     BACKUP_PATH_0 = "backup_path_0"
@@ -41,13 +42,13 @@ class ExperimentParameter(Parameter):
     SYSCTL_KEY = {
         RMEM: "net.ipv4.tcp_rmem",
         WMEM: "net.ipv4.tcp_wmem",
-        MPTCP_ENABLED: "net.mptcp.mptcp_enabled",
-        KERNELPM: "net.mptcp.mptcp_path_manager",
-        SCHED: "net.mptcp.mptcp_scheduler",
-        CC: "net.ipv4.tcp_congestion_control",
-        AUTOCORK: "net.ipv4.tcp_autocorking",
-        EARLY_RETRANS: "net.ipv4.tcp_early_retrans",
-        BUFFER_AUTOTUNING: "net.ipv4.tcp_moderate_rcvbuf",
+        # MPTCP_ENABLED: "net.mptcp.mptcp_enabled",
+        # KERNELPM: "net.mptcp.mptcp_path_manager",
+        # SCHED: "net.mptcp.mptcp_scheduler",
+        # CC: "net.ipv4.tcp_congestion_control",
+        # AUTOCORK: "net.ipv4.tcp_autocorking",
+        # EARLY_RETRANS: "net.ipv4.tcp_early_retrans",
+        # BUFFER_AUTOTUNING: "net.ipv4.tcp_moderate_rcvbuf",
     }
 
     # sysctl keys specific to client and server, independently
@@ -93,10 +94,10 @@ class ExperimentParameter(Parameter):
 
 class Experiment(object):
     """
-	Base class to instantiate an experiment to perform.
+        Base class to instantiate an experiment to perform.
 
-	This class is not instantiable as it. You must define a child class with the
-	`NAME` attribute.
+        This class is not instantiable as it. You must define a child class with the
+        `NAME` attribute.
 
     By default, an Experiment relies on an instance of ExperimentParameter to
     collect the parameters from the experiment configuration file. However, an
@@ -108,7 +109,7 @@ class Experiment(object):
         experiment_parameter    Instance of ExperimentParameter
         topo                    Instance of Topo
         topo_config             Instance of TopoConfig
-	"""
+        """
     PARAMETER_CLASS = ExperimentParameter
 
     IP_BIN = "ip"
@@ -118,7 +119,8 @@ class Experiment(object):
         """
         Instantiation of this base class only load the experiment parameter
         """
-        self.experiment_parameter = self.__class__.PARAMETER_CLASS(experiment_parameter_filename)
+        self.experiment_parameter = self.__class__.PARAMETER_CLASS(
+            experiment_parameter_filename)
         self.topo = topo
         self.topo_config = topo_config
 
@@ -158,8 +160,10 @@ class Experiment(object):
         """
         Function only meaningful for MPTCP
         """
-        priority_path_0 = self.experiment_parameter.get(ExperimentParameter.PRIO_PATH_0)
-        priority_path_1 = self.experiment_parameter.get(ExperimentParameter.PRIO_PATH_1)
+        priority_path_0 = self.experiment_parameter.get(
+            ExperimentParameter.PRIO_PATH_0)
+        priority_path_1 = self.experiment_parameter.get(
+            ExperimentParameter.PRIO_PATH_1)
         if not priority_path_0 == priority_path_1:
             self.topo.command_to(self.topo_config.client, "{} link set dev {} priority {}".format(
                 Experiment.IP_BIN, self.topo_config.get_client_interface(0), priority_path_0))
@@ -170,18 +174,20 @@ class Experiment(object):
             self.topo.command_to(self.topo_config.router, "{} link set dev {} priority {}".format(
                 Experiment.IP_BIN, self.topo_config.get_router_interface_to_client_switch(1), priority_path_1))
 
-        backup_path_0 = self.experiment_parameter.get(ExperimentParameter.BACKUP_PATH_0)
+        backup_path_0 = self.experiment_parameter.get(
+            ExperimentParameter.BACKUP_PATH_0)
         if int(backup_path_0) > 0:
             self.topo.command_to(self.topo_config.client,
-                self.topo_config.interface_backup_command(self.topo_config.get_client_interface(0)))
+                                 self.topo_config.interface_backup_command(self.topo_config.get_client_interface(0)))
             self.topo.command_to(self.topo_config.router,
-                self.topo_config.interface_backup_command(self.topo_config.get_router_interface_to_client_switch(0)))
-        backup_path_1 = self.experiment_parameter.get(ExperimentParameter.BACKUP_PATH_1)
+                                 self.topo_config.interface_backup_command(self.topo_config.get_router_interface_to_client_switch(0)))
+        backup_path_1 = self.experiment_parameter.get(
+            ExperimentParameter.BACKUP_PATH_1)
         if int(backup_path_1) > 0:
             self.topo.command_to(self.topo_config.client,
-                self.topo_config.interface_backup_command(self.topo_config.get_client_interface(1)))
+                                 self.topo_config.interface_backup_command(self.topo_config.get_client_interface(1)))
             self.topo.command_to(self.topo_config.router,
-                self.topo_config.interface_backup_command(self.topo_config.get_router_interface_to_client_switch(1)))
+                                 self.topo_config.interface_backup_command(self.topo_config.get_router_interface_to_client_switch(1)))
 
     def run_userspace_path_manager(self):
         """
@@ -190,13 +196,15 @@ class Experiment(object):
         if self.experiment_parameter.get(ExperimentParameter.KERNELPMC) == "netlink":
             logging.info("Running user-space path manager on client")
             upmc = self.experiment_parameter.get(ExperimentParameter.USERPMC)
-            upmca = self.experiment_parameter.get(ExperimentParameter.USERPMC_ARGS)
+            upmca = self.experiment_parameter.get(
+                ExperimentParameter.USERPMC_ARGS)
             self.topo.command_to(self.topo_config.client, "{} {} &>{} &".format(
                 upmc, upmca, "upmc.log"))
         if self.experiment_parameter.get(ExperimentParameter.KERNELPMS) == "netlink":
             logging.info("Running user-space path manager on server")
             upms = self.experiment_parameter.get(ExperimentParameter.USERPMS)
-            upmsa = self.experiment_parameter.get(ExperimentParameter.USERPMS_ARGS)
+            upmsa = self.experiment_parameter.get(
+                ExperimentParameter.USERPMS_ARGS)
             self.topo.command_to(self.topo_config.server, "{} {} &>{} &".format(
                 upms, upmsa, "upms.log"))
 
@@ -204,11 +212,13 @@ class Experiment(object):
         if self.experiment_parameter.get(ExperimentParameter.KERNELPMC) == "netlink":
             logging.info("Cleaning user-space path manager on client")
             upmc = self.experiment_parameter.get(ExperimentParameter.USERPMC)
-            self.topo.command_to(self.topo_config.client, "killall {}".format(upmc))
+            self.topo.command_to(self.topo_config.client,
+                                 "killall {}".format(upmc))
         if self.experiment_parameter.get(ExperimentParameter.KERNELPMS) == "netlink":
             logging.info("Cleaning user-space path manager on server")
             upms = self.experiment_parameter.get(ExperimentParameter.USERPMS)
-            self.topo.command_to(self.topo_config.client, "killall {}".format(upms))
+            self.topo.command_to(self.topo_config.client,
+                                 "killall {}".format(upms))
 
     def run_netem_at(self):
         self.topo_config.run_netem_at()
@@ -244,13 +254,14 @@ class Experiment(object):
         Record the current sysctls
         """
         self.sysctl_to_restore = {}
-        self._save_sysctl(ExperimentParameter.SYSCTL_KEY, self.sysctl_to_restore)
+        self._save_sysctl(ExperimentParameter.SYSCTL_KEY,
+                          self.sysctl_to_restore)
         self.client_sysctl_to_restore = {}
         self._save_sysctl(ExperimentParameter.SYSCTL_KEY_CLIENT, self.client_sysctl_to_restore,
-                ns=True, who=self.topo_config.client)
+                          ns=True, who=self.topo_config.client)
         self.server_sysctl_to_restore = {}
         self._save_sysctl(ExperimentParameter.SYSCTL_KEY_SERVER, self.server_sysctl_to_restore,
-                ns=True, who=self.topo_config.server)
+                          ns=True, who=self.topo_config.server)
 
     def _save_sysctl(self, sysctl_dict, sysctl_to_restore, ns=False, who=None):
         for k in sysctl_dict:
@@ -284,13 +295,14 @@ class Experiment(object):
         """
         Write the experiment sysctls
         """
-        self._write_sysctl(ExperimentParameter.SYSCTL_KEY, self.sysctl_to_restore)
+        self._write_sysctl(ExperimentParameter.SYSCTL_KEY,
+                           self.sysctl_to_restore)
         self._write_sysctl(ExperimentParameter.SYSCTL_KEY_CLIENT, self.client_sysctl_to_restore,
-                ns=True, who=self.topo_config.client)
+                           ns=True, who=self.topo_config.client)
         self._write_sysctl(ExperimentParameter.SYSCTL_KEY_SERVER, self.server_sysctl_to_restore,
-                ns=True, who=self.topo_config.server)
+                           ns=True, who=self.topo_config.server)
 
-    def _write_sysctl(self, sysctl_dict, sysctl_to_restore, ns = False, who = None):
+    def _write_sysctl(self, sysctl_dict, sysctl_to_restore, ns=False, who=None):
         for k in sysctl_to_restore:
             sysctl_key = sysctl_dict[k]
             sysctl_value = self.experiment_parameter.get(k)
@@ -306,13 +318,14 @@ class Experiment(object):
         """
         Restore back the sysctls that were present before running the experiment
         """
-        self._restore_sysctl(ExperimentParameter.SYSCTL_KEY, self.sysctl_to_restore)
+        self._restore_sysctl(ExperimentParameter.SYSCTL_KEY,
+                             self.sysctl_to_restore)
         self._restore_sysctl(ExperimentParameter.SYSCTL_KEY_CLIENT, self.client_sysctl_to_restore,
-                ns=True, who=self.topo_config.client)
+                             ns=True, who=self.topo_config.client)
         self._restore_sysctl(ExperimentParameter.SYSCTL_KEY_SERVER, self.server_sysctl_to_restore,
-                ns=True, who=self.topo_config.server)
+                             ns=True, who=self.topo_config.server)
 
-    def _restore_sysctl(self, sysctl_dict, sysctl_to_restore, ns = False, who = None):
+    def _restore_sysctl(self, sysctl_dict, sysctl_to_restore, ns=False, who=None):
         for k in sysctl_to_restore:
             sysctl_key = sysctl_dict[k]
             sysctl_value = sysctl_to_restore[k]
@@ -326,27 +339,32 @@ class Experiment(object):
                 logging.error("unable to set sysctl {}".format(sysctl_key))
 
     def run_tcpdump(self):
-        client_pcap = self.experiment_parameter.get(ExperimentParameter.CLIENT_PCAP)
-        server_pcap = self.experiment_parameter.get(ExperimentParameter.SERVER_PCAP)
-        snaplen_pcap = self.experiment_parameter.get(ExperimentParameter.SNAPLEN_PCAP)
+        client_pcap = self.experiment_parameter.get(
+            ExperimentParameter.CLIENT_PCAP)
+        server_pcap = self.experiment_parameter.get(
+            ExperimentParameter.SERVER_PCAP)
+        snaplen_pcap = self.experiment_parameter.get(
+            ExperimentParameter.SNAPLEN_PCAP)
+        self.topo.command_to(self.topo_config.router,
+                             "tcpdump -i any -s {} -w router.pcap &".format(snaplen_pcap))
         if client_pcap == "yes":
             self.topo.command_to(self.topo_config.client,
-                "tcpdump -i any -s {} -w client.pcap &".format(snaplen_pcap))
+                                 "tcpdump -i any -s {} -w client.pcap &".format(snaplen_pcap))
         if server_pcap == "yes":
             self.topo.command_to(self.topo_config.server,
-                "tcpdump -i any -s {} -w server.pcap &".format(snaplen_pcap))
+                                 "tcpdump -i any -s {} -w server.pcap &".format(snaplen_pcap))
         if server_pcap == "yes" or client_pcap == "yes":
             logging.info("Activating tcpdump, waiting for it to run")
-            self.topo.command_to(self.topo_config.client,"sleep 5")
+            self.topo.command_to(self.topo_config.client, "sleep 5")
 
     def ping(self):
         self.topo.command_to(self.topo_config.client,
-                        "rm {}".format(Experiment.PING_OUTPUT))
+                             "rm {}".format(Experiment.PING_OUTPUT))
         count = self.experiment_parameter.get(ExperimentParameter.PING_COUNT)
         for j in range(0, self.topo_config.server_interface_count()):
             for i in range(0, self.topo_config.client_interface_count()):
                 cmd = self.ping_command(self.topo_config.get_client_ip(i),
-                    self.topo_config.get_server_ip(interface_index=j), n=count)
+                                        self.topo_config.get_server_ip(interface_index=j), n=count)
                 logging.info(cmd)
                 self.topo.command_to(self.topo_config.client, cmd)
 
@@ -362,7 +380,8 @@ class RandomFileParameter(ExperimentParameter):
     RANDOM_SIZE = "file_size"  # in KB
 
     def __init__(self, experiment_parameter_filename):
-        super(RandomFileParameter, self).__init__(experiment_parameter_filename)
+        super(RandomFileParameter, self).__init__(
+            experiment_parameter_filename)
         self.default_parameters.update({
             RandomFileParameter.FILE: "random",
             RandomFileParameter.RANDOM_SIZE: "1024",
@@ -378,22 +397,24 @@ class RandomFileExperiment(Experiment):
     PARAMETER_CLASS = RandomFileParameter
 
     def __init__(self, experiment_parameter_filename, topo, topo_config):
-        super(RandomFileExperiment, self).__init__(experiment_parameter_filename, topo, topo_config)
+        super(RandomFileExperiment, self).__init__(
+            experiment_parameter_filename, topo, topo_config)
         self.load_parameters()
         self.ping()
 
     def load_parameters(self):
         super(RandomFileExperiment, self).load_parameters()
         self.file = self.experiment_parameter.get(RandomFileParameter.FILE)
-        self.random_size = self.experiment_parameter.get(RandomFileParameter.RANDOM_SIZE)
+        self.random_size = self.experiment_parameter.get(
+            RandomFileParameter.RANDOM_SIZE)
 
     def prepare(self):
         super(RandomFileExperiment, self).prepare()
-        if self.file  == "random":
+        if self.file == "random":
             self.topo.command_to(self.topo_config.client,
-                "dd if=/dev/urandom of=random bs=1K count={}".format(self.random_size))
+                                 "dd if=/dev/urandom of=random bs=1K count={}".format(self.random_size))
 
     def clean(self):
         super(RandomFileExperiment, self).clean()
-        if self.file  == "random":
+        if self.file == "random":
             self.topo.command_to(self.topo_config.client, "rm random*")

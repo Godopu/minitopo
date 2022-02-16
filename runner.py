@@ -14,14 +14,17 @@ import os
 import subprocess
 import traceback
 
+
 def get_git_revision_short_hash():
     # Because we might run Minitopo from elsewhere.
     curr_dir = os.getcwd()
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     os.chdir(ROOT_DIR)
-    ret = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode("unicode_escape").strip()
+    ret = subprocess.check_output(
+        ['git', 'rev-parse', '--short', 'HEAD']).decode("unicode_escape").strip()
     os.chdir(curr_dir)
     return ret
+
 
 class Runner(object):
     """
@@ -31,8 +34,10 @@ class Runner(object):
 
     All the operations are done when calling the constructor.
     """
+
     def __init__(self, builder_type, topo_parameter_file, experiment_parameter_file):
-        logging.info("Minitopo version {}".format(get_git_revision_short_hash()))
+        logging.info("Minitopo version {}".format(
+            get_git_revision_short_hash()))
         self.topo_parameter = TopoParameter(topo_parameter_file)
         self.set_builder(builder_type)
         self.apply_topo()
@@ -48,7 +53,8 @@ class Runner(object):
         if builder_type == Topo.MININET_BUILDER:
             self.topo_builder = MininetBuilder()
         else:
-            raise Exception("I can not find the builder {}".format(builder_type))
+            raise Exception(
+                "I can not find the builder {}".format(builder_type))
 
     def apply_topo(self):
         """
@@ -86,9 +92,11 @@ class Runner(object):
         Match the name of the experiement and launch it
         """
         # Well, we need to load twice the experiment parameters, is it really annoying?
-        xp = ExperimentParameter(experiment_parameter_file).get(ExperimentParameter.XP_TYPE)
+        xp = ExperimentParameter(experiment_parameter_file).get(
+            ExperimentParameter.XP_TYPE)
         if xp in EXPERIMENTS:
-            exp = EXPERIMENTS[xp](experiment_parameter_file, self.topo, self.topo_config)
+            exp = EXPERIMENTS[xp](experiment_parameter_file,
+                                  self.topo, self.topo_config)
             exp.classic_run()
         else:
             raise Exception("Unknown experiment {}".format(xp))
@@ -107,17 +115,19 @@ if __name__ == '__main__':
         description="Minitopo, a wrapper of Mininet to run multipath experiments")
 
     parser.add_argument("--topo_param_file", "-t", required=True,
-        help="path to the topo parameter file")
+                        help="path to the topo parameter file")
     parser.add_argument("--experiment_param_file", "-x",
-        help="path to the experiment parameter file")
+                        help="path to the experiment parameter file")
 
     args = parser.parse_args()
 
-    logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s", level=logging.INFO)
+    logging.basicConfig(
+        format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s", level=logging.INFO)
 
     # XXX Currently, there is no alternate topo builder...
     try:
-        Runner(Topo.MININET_BUILDER, args.topo_param_file, args.experiment_param_file)
+        Runner(Topo.MININET_BUILDER, args.topo_param_file,
+               args.experiment_param_file)
     except Exception as e:
         logging.fatal("A fatal error occurred: {}".format(e))
         traceback.print_exc()

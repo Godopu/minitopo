@@ -1,4 +1,4 @@
-xpType:https
+xpType:pquic
 clientPcap:yes
 kpms:fullmesh
 kpmc:fullmesh
